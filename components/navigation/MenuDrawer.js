@@ -5,100 +5,50 @@ import {
     Image,
     TouchableOpacity,
     ScrollView,
+    View,
+    Dimensions
 } from 'react-native';
 import { connect } from 'react-redux';
-import { updateProp } from '../../actions';
-import Profile from './Profile';
-import LinearGradient from 'react-native-linear-gradient';
-
-import {
-    SEEN_SCREEN,
-    WISH_LIST_SCREEN,
-    HOME_SCREEN,
-    FAVORITE_SCREEN,
-    TOP_SCREEN,
-    ARTICLES_SCREEN,
-    FESTIVALS_SCREEN
-} from '../../actions/types';
+import { HOME_SCREEN } from '../../actions/types';
+const w = Dimensions.get("window");
 
 class MenuDrawer extends Component {
 
-    renderImage = i=>{
-        const { sections_img, festival_img, article_img } = this.props.store;
-        if(i < 4){
-            return <Image
-                style={styles.link_img}
-                source={sections_img[i]}
-            />
-        }
-        if(i === 4){
-            return <Image
-                style={styles.link_img}
-                source={festival_img}
-            />
-        }
-        return <Image
-            style={styles.link_img}
-            source={article_img}
-        />
-    };
-
     render() {
-        const { updateProp, store:{ sections_img, article_img, sections }, navigation  } = this.props;
+        const { store:{ sections }, navigation:{navigate}  } = this.props;
         return (
-            <LinearGradient
-                style={styles.container}
-                colors={["rgba(85,88,218,1)", "rgba(95,209,249,1)"]}
-            >
-                <Profile/>
-                <ScrollView>
+            <View style={styles.container}>
+            <View style={styles.links}>
+                    <ScrollView>
 
-                    <TouchableOpacity
-                        style={styles.link}
-                        onPress={()=>navigation.navigate(HOME_SCREEN)}
-                    >
-                        <Image
-                            style={styles.link_img}
-                            source={require("../../img/home.png")}
-                        />
-                        <Text style={styles.link_txt}>خانه</Text>
-                    </TouchableOpacity>
-                    {sections.map((section, i)=>{
-                        return(
-                            <TouchableOpacity
-                                key={section}
-                                activeOpacity={.7}
-                                style={styles.link}
-                                onPress={()=>{
-                                    switch (i){
-                                        case 0:
-                                            navigation.navigate(FAVORITE_SCREEN);
-                                            break;
-                                        case 1:
-                                            navigation.navigate(WISH_LIST_SCREEN,);
-                                            break;
-                                        case 2:
-                                            navigation.navigate(SEEN_SCREEN);
-                                            break;
-                                        case 3:
-                                            navigation.navigate(TOP_SCREEN);
-                                            break;
-                                        case 4:
-                                            navigation.navigate(FESTIVALS_SCREEN);
-                                            break;
-                                        case 5:
-                                            navigation.navigate(ARTICLES_SCREEN);
-                                    }
-                                }}
-                            >
-                                {this.renderImage(i)}
-                                <Text style={styles.link_txt}>{section}</Text>
-                            </TouchableOpacity>
-                        )
-                    })}
+                        <TouchableOpacity
+                            style={styles.link}
+                            onPress={()=>navigate(HOME_SCREEN)}
+                        >
+                            <Image
+                                style={styles.link_img}
+                                source={require("../../img/home.png")}
+                            />
+                        </TouchableOpacity>
+                        {sections.map(({name, link, img})=>{
+                            return(
+                                <TouchableOpacity
+                                    key={name}
+                                    activeOpacity={.7}
+                                    style={styles.link}
+                                    onPress={()=>navigate(link)}
+                                >
+                                    <Image
+                                        style={styles.link_img}
+                                        source={img}
+                                    />
+                                </TouchableOpacity>
+                            )
+                        })}
 
-                </ScrollView>
-            </LinearGradient>
+                    </ScrollView>
+            </View>
+            </View>
         );
     }
 }
@@ -110,12 +60,25 @@ function mapStateToProps(store) {
 }
 
 export default connect(
-    mapStateToProps, {updateProp}
+    mapStateToProps
 )(MenuDrawer);
 
 const styles = StyleSheet.create({
     container:{
         flex: 1,
+        backgroundColor: "transparent",
+        justifyContent: "center",
+        alignItems: "center"
+    },
+    links:{
+        overflow: "hidden",
+        alignSelf: "center",
+        backgroundColor: "#005b96",
+        justifyContent:"center",
+        alignItems: "center",
+        flexDirection: "row",
+        borderTopEndRadius: 30,
+        borderBottomEndRadius: 30
     },
     link:{
         height: 60,

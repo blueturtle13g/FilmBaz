@@ -5,58 +5,49 @@ import {
     StyleSheet,
     TouchableOpacity,
     TextInput,
-    NetInfo,
-    ToastAndroid,
     ActivityIndicator,
-    UIManager,
-    LayoutAnimation
+    Dimensions
 } from 'react-native';
 import { connect } from 'react-redux';
 import Ionicons from 'react-native-vector-icons/Ionicons';
+import Entypo from 'react-native-vector-icons/Entypo';
 import * as Animatable from 'react-native-animatable';
 
+const w = Dimensions.get("window");
 import { updateProp } from '../../actions';
 import {
-    SEARCH_ERR,
     SEARCH_RESULTS,
     RESULTS_SCREEN,
-    SEARCH_TXT,
-    SECTIONS_IMG,
     TMDB_API_KEY,
     TMDB_BASE_REQ,
-    UNSPLASH_CLIENT_ID,
-    LANGUAGE_FA
+    LANDSCAPE,
+    SEARCH_TXT
 } from "../../actions/types";
 
 class Search extends Component {
     state={
         is_searching: false,
-        not_found: false
+        not_found: false,
+        is_expanded: false
     };
 
-    componentWillUpdate() {
-        UIManager.setLayoutAnimationEnabledExperimental && UIManager.setLayoutAnimationEnabledExperimental(true);
-        LayoutAnimation.easeInEaseOut();
-    }
-
     getResults = async ()=>{
+        const { updateProp, store:{ search_txt, network_err } , navigate } = this.props;
+        if(network_err) return;
         this.setState({is_searching: true});
-        const { updateProp, store:{ search_txt }, navigation } = this.props;
-        console.log(`${TMDB_BASE_REQ}/search/multi${TMDB_API_KEY}&query=${search_txt}`);
         try {
             let results = await fetch(
                 `${TMDB_BASE_REQ}/search/multi${TMDB_API_KEY}&query=${search_txt}`
             );
             let results_json = await results.json();
-            this.setState({is_searching: false});
             if(!!results_json.results.length){
                 this.setState({not_found: false});
-                console.log("results_json: ", results_json);
                 updateProp({
                     key: SEARCH_RESULTS,
                     value: results_json
                 });
-                navigation.navigate(RESULTS_SCREEN);
+                this.setState({is_searching: false});
+                navigate(RESULTS_SCREEN);
             }else{
                 this.setState({not_found: true});
             }
@@ -65,21 +56,23 @@ class Search extends Component {
         }
     };
 
-    triggerSearch = ()=>{
-        const { updateProp, store:{ search_txt }, navigation } = this.props;
-        NetInfo.isConnected.fetch().then(isConnected=> {
-            console.log("isConnected: ", isConnected);
-            if(isConnected)  this.getResults();
-            else ToastAndroid.show('لطفا اینترنت و فیلترشکن خود را روشن کنید..', ToastAndroid.SHORT);
-        });
+    renderIcon = ()=>{
+        const { is_searching, is_expanded } = this.state;
+        if(is_searching) return<ActivityIndicator size="large" color="#fff"/>;
+        else if(!is_expanded)return <Ionicons name={"md-search"} color={"#fff"} size={30}/>;
+        else return <Entypo name={`chevron-thin-left`} size={30}  color="#fff"/>
     };
 
     render() {
-        const { updateProp, store:{ search_txt }, navigation } = this.props;
-        const { is_searching, not_found } = this.state;
+        const { store:{orientation, search_txt}, updateProp } = this.props;
+        const { is_searching, not_found, is_expanded } = this.state;
+        const width = orientation === LANDSCAPE ? w.height-5 : w.width-5;
         return (
-            <View style={styles.container}>
-                {not_found &&(
+            <Animatable.View
+                transition={"width"}
+                style={[styles.container, is_expanded &&{width}]}
+            >
+                {(not_found && is_expanded) &&(
                     <Text
                         style={styles.no_item}
                     >
@@ -89,24 +82,21 @@ class Search extends Component {
                 <View style={styles.search}>
                     <TouchableOpacity
                         style={styles.search_icon}
-                        onPress={()=>{
-                            if(!is_searching && !!search_txt.trim())this.triggerSearch()
-                        }}
+                        onPress={()=>this.setState({is_expanded: !is_expanded})}
                     >
-                        {is_searching
-                            ?
-                            <ActivityIndicator size="large" color="#fff"/>
-                            :
-                            <Ionicons name={"md-search"} color={"#fff"} size={30}/>
-                        }
+                        {this.renderIcon()}
                     </TouchableOpacity>
                     <TextInput
+                        onBlur={()=>this.setState({is_expanded: false})}
                         style={styles.search_input}
                         value={search_txt}
-                        onChangeText={value=>updateProp({key: SEARCH_TXT, value})}
+                        onChangeText={search_txt=>updateProp({key: SEARCH_TXT, value: search_txt})}
+                        onSubmitEditing={()=>{
+                            if(!is_searching && !!search_txt.trim())this.getResults()
+                        }}
                     />
                 </View>
-            </View>
+            </Animatable.View>
         );
     }
 }
@@ -124,14 +114,13 @@ export default connect(
 const styles = StyleSheet.create({
     container:{
         position: "absolute",
-        bottom: 1,
-        width: "99%",
-        alignSelf: "center",
+        bottom: 3,
+        alignSelf: "flex-end",
+        width: 45
     },
     search:{
         height: 46,
         backgroundColor: "#2b2b2b",
-        borderRadius: 30,
         marginTop: 1,
         flexDirection: "row",
         justifyContent: "space-between",
@@ -144,13 +133,11 @@ const styles = StyleSheet.create({
         fontSize: 20
     },
     search_icon:{
-        height: 45,
+        height: "100%",
         width: 45,
-        marginLeft: 1,
         backgroundColor: "#205370",
         justifyContent: "center",
         alignItems: "center",
-        borderRadius: 100,
     },
     no_item:{
         color: "#2b2b2b",

@@ -5,23 +5,36 @@ import {
     StyleSheet
 } from 'react-native';
 
-const KeyVal = ({keyy, val, onPress})=>{
-    console.log("keyy: ", keyy);
-    console.log("val: ", val);
+export default ({keyy, val, onPress, multiple_val, with_object, no_border})=>{
     return (
-        <View style={styles.key_val}>
+        <View style={[styles.key_val, no_border && {borderBottomWidth: 0}]}>
             <Text style={styles.txt}>{keyy}: </Text>
-            <Text
-                style={[styles.txt, styles.val, (keyy === "نام") && styles.long_txt]}
-                onPress={onPress}
-            >
-                {val}
-            </Text>
+            {multiple_val
+                ?
+                <View style={{ justifyContent: "flex-end", width: "100%"}}>
+                    {val.map((v,i)=>{
+                    return(
+                        <Text
+                            key={with_object ? v.name : v}
+                            style={[styles.txt, styles.val, {textAlign: "right",minWidth: 10}]}
+                            onPress={onPress}
+                        >
+                            {with_object ? v.name : v} {(i < val.length-1) ? "," : ""}
+                        </Text>
+                    )
+                })}
+                </View>
+                :
+                <Text
+                    style={[styles.txt, styles.val, (keyy === "نام") && styles.long_txt]}
+                    onPress={onPress}
+                >
+                    {val}
+                </Text>
+            }
         </View>
     );
 };
-
-export default KeyVal;
 
 const styles = StyleSheet.create({
     key_val:{
@@ -43,6 +56,7 @@ const styles = StyleSheet.create({
     },
     long_txt:{
         flex: 1,
-        textAlign: "right"
+        textAlign: "right",
+        marginRight: 5
     },
 });

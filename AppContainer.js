@@ -12,31 +12,33 @@ import PersonScreen from './screens/PersonScreen';
 import WishListScreen from "./screens/WishListScreen";
 import SeenScreen from "./screens/SeenScreen";
 import FavoriteScreen from "./screens/FavoriteScreen";
-import ArticlesScreen from "./screens/ArticlesScreen";
+import ArtistsScreen from "./screens/ArtistsScreen";
 import TopScreen from "./screens/TopScreen";
-import FestivalsScreen from "./screens/FestivalsScreen";
+import TrendingScreen from "./screens/TrendingScreen";
 import ResultsScreen from "./screens/ResultsScreen";
+import TrailerScreen from "./screens/TrailerScreen";
 
 import MenuDrawer from "./components/navigation/MenuDrawer";
 import CustomHeader from './components/navigation/CustomHeader';
 import HeaderButton from './components/navigation/HeaderButton';
 import {toPersian} from "./utils";
 
-const w = Dimensions.get('window');
+const WIDTH = Dimensions.get('window').width;
 const DrawerConfig = {
-    drawerWidth: w.width*.83,
+    drawerWidth: 60,
     drawerPosition: "right",
     contentComponent: ({navigation})=>{
         return(<MenuDrawer navigation={navigation}/>)
-    }
+    },
+    edgeWidth: 50-WIDTH,
+    drawerBackgroundColor: "transparent"
 };
 
 const options = (title)=>({
     header: props => <CustomHeader {...props} title={title}/>,
     headerStyle: {
         backgroundColor: "transparent"
-    },
-    headerTintColor: "#fff"
+    }
 });
 
 const AppNavigator = createDrawerNavigator(
@@ -67,19 +69,19 @@ const AppNavigator = createDrawerNavigator(
             },
             ResultsScreen:{
                 screen: ResultsScreen,
-                navigationOptions: options("نتایج جستوجو")
+                navigationOptions: options("نتایج جست و جو")
             },
             TopScreen:{
                 screen: TopScreen,
-                navigationOptions: options(toPersian("250 فیلم برتر"))
+                navigationOptions: options(toPersian("برتریــن ها"))
             },
-            FestivalsScreen:{
-                screen: FestivalsScreen,
-                navigationOptions: options("جشنواره ها")
+            TrendingScreen:{
+                screen: TrendingScreen,
+                navigationOptions: options("تـرنــد")
             },
-            ArticlesScreen:{
-                screen: ArticlesScreen,
-                navigationOptions: options("مقالات")
+            ArtistsScreen:{
+                screen: ArtistsScreen,
+                navigationOptions: options("هنرمندان")
             },
             MovieScreen:{
                 screen: MovieScreen,
@@ -88,6 +90,12 @@ const AppNavigator = createDrawerNavigator(
             PersonScreen:{
                 screen: PersonScreen,
                 navigationOptions: options(false)
+            },
+            TrailerScreen:{
+                screen: TrailerScreen,
+                navigationOptions: {
+                    header: null
+                }
             },
         })
     },

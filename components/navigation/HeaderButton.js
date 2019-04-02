@@ -1,5 +1,5 @@
 import React from 'react';
-import { TouchableOpacity, View, StyleSheet } from 'react-native';
+import { TouchableOpacity, StyleSheet } from 'react-native';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
 
 export default ({openDrawer})=>{
@@ -8,7 +8,7 @@ export default ({openDrawer})=>{
             onPress={openDrawer }
             style={styles.container}
         >
-            <MaterialCommunityIcons name={"menu"} color={"#fff"} size={35}/>
+            <MaterialCommunityIcons name={"menu"} color={"#2b2b2b"} size={35}/>
         </TouchableOpacity>
     )
 };

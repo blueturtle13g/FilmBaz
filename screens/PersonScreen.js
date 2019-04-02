@@ -1,21 +1,15 @@
-import React, { Component } from 'react';
-import { View, Text, StyleSheet } from 'react-native';
+import React  from 'react';
+import {ScrollView} from 'react-native';
 import { connect } from 'react-redux';
-import { updateProp } from '../actions';
+import Item from '../components/item/Item';
 
-
-class PersonScreen extends Component {
-
-    render() {
-        const { updateProp, store:{ current_person } } = this.props;
-        console.log("current_person: ", current_person);
-        return (
-            <View style={styles.container}>
-                <Text>Artist</Text>
-            </View>
-        );
-    }
-}
+const PersonScreen = props=>{
+    return (
+        <ScrollView>
+            <Item item={props.store.current_person}/>
+        </ScrollView>
+    );
+};
 
 function mapStateToProps(store) {
     return {
@@ -24,11 +18,5 @@ function mapStateToProps(store) {
 }
 
 export default connect(
-    mapStateToProps, {updateProp}
+    mapStateToProps
 )(PersonScreen);
-
-const styles = StyleSheet.create({
-    container:{
-
-    }
-});

@@ -2,163 +2,99 @@ import React from 'react';
 import {
     View,
     Text,
-    StyleSheet,
-    TouchableOpacity,
-    ActivityIndicator
+    StyleSheet
 } from 'react-native';
-import Ionicons from 'react-native-vector-icons/Ionicons';
-import LinearGradient from 'react-native-linear-gradient';
+import Block from './Block';
 
-const Pagination = ({pages, page, moveTo, what_is_pressed})=>{
+export default  ({pages, page, moveTo, what_is_pressed})=>{
     const can_go_back = page-1 > 0;
     const can_go_forward = page+1 <= pages;
     return (
-        <LinearGradient
+        <View
             style={styles.container}
-            colors={["#43cea2","#185a9d"]}
             pointerEvents={what_is_pressed > 1 ? "none" : "auto"}
         >
 
-            <TouchableOpacity
-                style={[styles.block, {width: 30}]}
+            <Block
+                moveTo={moveTo}
+                page={page+1}
+                in_progress={what_is_pressed === page+1}
                 disabled={!can_go_forward}
-                onPress={()=>{
-                    if(can_go_forward) moveTo(page+1)
-                }}
-            >
-                {(what_is_pressed === page+1)
-                    ?
-                    <ActivityIndicator color={"#fff"}/>
-                    :
-                    <Ionicons size={33} color={"#ffffff"} name={"ios-arrow-forward"}/>
-                }
-            </TouchableOpacity>
+                forward
+            />
 
             {(pages > page && page+5 !== pages) &&(
-                <TouchableOpacity
-                    style={styles.block}
-                    onPress={()=>moveTo(pages)}
-                >
-                    {(what_is_pressed === pages)
-                        ?
-                        <ActivityIndicator color={"#fff"}/>
-                        :
-                        <Text style={styles.txt}>{pages}</Text>
-                    }
-                </TouchableOpacity>
+                <Block
+                    moveTo={moveTo}
+                    page={pages}
+                    in_progress={what_is_pressed === pages}
+                />
             )}
 
             {(page+5 <= pages) &&(
                 <View style={{flexDirection: "row"}}>
-                    <TouchableOpacity
-                        style={styles.block}
-                        onPress={()=>moveTo(page+5)}
-                    >
-                        {(what_is_pressed === page+5)
-                            ?
-                            <ActivityIndicator color={"#fff"}/>
-                            :
-                            <Text style={styles.txt}>{page+5}</Text>
-                        }
-                    </TouchableOpacity>
+                    <Block
+                        moveTo={moveTo}
+                        page={page+5}
+                        in_progress={what_is_pressed === page+5}
+                    />
                     <Text style={styles.dots}>...</Text>
                 </View>
             )}
 
-            <TouchableOpacity
-                style={[styles.block, styles.active_block]}
-                disabled
-            >
-                <Text style={[styles.txt, styles.active_txt]}>{page}</Text>
-            </TouchableOpacity>
+            <Block
+                moveTo={moveTo}
+                page={page}
+                in_progress={what_is_pressed === page}
+                desabled
+                active
+            />
 
             {(page-5 > 0) &&(
                 <View style={{flexDirection: "row"}}>
                     <Text style={styles.dots}>...</Text>
-                    <TouchableOpacity
-                        style={styles.block}
-                        onPress={()=>moveTo(page-5)}
-                    >
-                        {(what_is_pressed === page-5)
-                            ?
-                            <ActivityIndicator color={"#fff"}/>
-                            :
-                            <Text style={styles.txt}>{page-5}</Text>
-                        }
-                    </TouchableOpacity>
+                    <Block
+                        moveTo={moveTo}
+                        page={page-5}
+                        in_progress={what_is_pressed === page-5}
+                    />
                 </View>
             )}
 
             {(page > 1  && page-5 !== 1) &&(
-                <TouchableOpacity
-                    style={styles.block}
-                    onPress={()=>moveTo(1)}
-                >
-                    {(what_is_pressed === 1)
-                        ?
-                        <ActivityIndicator color={"#fff"}/>
-                        :
-                        <Text style={styles.txt}>{1}</Text>
-                    }
-                </TouchableOpacity>
+                <Block
+                    moveTo={moveTo}
+                    page={1}
+                    in_progress={what_is_pressed === 1}
+                />
             )}
 
-            <TouchableOpacity
-                style={[styles.block, {width: 30}]}
+            <Block
+                moveTo={moveTo}
+                page={page-1}
+                in_progress={what_is_pressed === page-1}
                 disabled={!can_go_back}
-                onPress={()=>{
-                    if(can_go_back) moveTo(page-1)
-                }}
-            >
-                {(what_is_pressed === page-1)
-                    ?
-                    <ActivityIndicator color={"#fff"}/>
-                    :
-                    <Ionicons size={33} color={"#ffffff"} name={"ios-arrow-back"}/>
-                }
-            </TouchableOpacity>
-        </LinearGradient>
+                back
+            />
+        </View>
     );
 };
 
-export default Pagination;
-
 const styles = StyleSheet.create({
     container:{
-        position: "absolute",
-        bottom: 0,
         alignSelf: "center",
-        backgroundColor: "#fff",
-        // width: "60%",
+        backgroundColor: "#009688",
         height: 40,
-        paddingHorizontal: 10,
+        paddingHorizontal: 7,
         borderTopEndRadius: 20,
         borderTopStartRadius: 20,
         justifyContent: "center",
         alignItems: "center",
         flexDirection: "row",
-        overflow: "hidden"
-    },
-    block:{
-        height: 35,
-        justifyContent: "center",
-        alignItems: "center",
-        borderWidth: 1,
-        borderRadius: 5,
-        borderColor: "#051e3e",
-        marginHorizontal: 3,
-        paddingHorizontal: 3
-    },
-    active_block:{
-        backgroundColor: "#051e3e"
+        overflow: "hidden",
     },
     dots:{
         textAlignVertical: "bottom",
         fontSize: 18
     },
-    txt:{
-        fontSize: 23,
-        fontWeight: "600",
-        color: "#ffffff"
-    }
 });

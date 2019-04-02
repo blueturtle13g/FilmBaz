@@ -1,9 +1,7 @@
 import React, { Component } from 'react';
 import {
     View,
-    StyleSheet,
-    NetInfo,
-    ToastAndroid,
+    StyleSheet
 } from 'react-native';
 import { connect } from 'react-redux';
 import { updateProp } from '../../actions';
@@ -15,11 +13,12 @@ import {
     CURRENT_PERSON,
     MOVIE_SCREEN,
     PERSON_SCREEN,
-    DYNAMIC_TITLE
+    DYNAMIC_TITLE,
+    SIMILAR_RESULTS
 } from '../../actions/types';
 import {correct_date, toPersian} from "../../utils";
-import KeyVal from './/KeyVal';
-import KnownFor from './/KnownFor';
+import KeyVal from './KeyVal';
+import KnownFor from './KnownFor';
 import ImgSection from './ImgSection';
 
 class ResultItem extends Component {
@@ -27,73 +26,93 @@ class ResultItem extends Component {
         is_handling: false
     };
 
-    handleLink =(id, media_type)=>{
-        if(this.state.is_handling) return;
+    handleLink =async (id, media_type)=>{
+        const { updateProp, navigate, store:{network_err}} = this.props;
+        if(this.state.is_handling || network_err) return;
         this.setState({is_handling: true});
-        const { updateProp, store:{}, navigation} = this.props;
-        NetInfo.isConnected.fetch().then(async isConnected=> {
-            if(isConnected){
-                console.log(`${TMDB_BASE_REQ}/${media_type}/${id}${TMDB_API_KEY}${(media_type !== "person") ? APPEND_MOVIE : ""}`);
+        try {
+            let results = await fetch(`${TMDB_BASE_REQ}/${media_type}/${id}${TMDB_API_KEY}${(media_type !== "person") ? APPEND_MOVIE : ""}`);
+            let results_json = await results.json();
+            results_json.media_type = media_type;
+            if(media_type !== "person"){
                 try {
-                    let results = await fetch(`${TMDB_BASE_REQ}/${media_type}/${id}${TMDB_API_KEY}${(media_type !== "person") ? APPEND_MOVIE : ""}`);
-                    let results_json = await results.json();
-                    console.log("results_json: ", results_json);
-                    if(media_type !== "person"){
-                        updateProp([
-                            {key: CURRENT_MOVIE, value: results_json},
-                            {key: DYNAMIC_TITLE, value: results_json.title || results_json.name},
-                        ]);
-                        navigation.navigate(MOVIE_SCREEN)
-                    }else{
-                        updateProp([
-                            {key: CURRENT_PERSON, value: results_json},
-                            {key: DYNAMIC_TITLE, value: results_json.title || results_json.name},
-                        ]);
-                        navigation.navigate(PERSON_SCREEN)
-                    }
-
+                    let similar_results = await fetch(`${TMDB_BASE_REQ}/${media_type}/${id}/similar${TMDB_API_KEY}`);
+                    let similar_results_json = await similar_results.json();
+                    updateProp([
+                        {key: CURRENT_MOVIE, value: results_json},
+                        {key: DYNAMIC_TITLE, value: results_json.title || results_json.name},
+                        {key: SIMILAR_RESULTS, value: similar_results_json.results.slice(0, 10)}
+                    ]);
                     this.setState({is_handling: false});
                 } catch (error) {
                     console.error(error);
                 }
+                navigate(MOVIE_SCREEN)
+            }else{
+                updateProp([
+                    {key: CURRENT_PERSON, value: results_json},
+                    {key: DYNAMIC_TITLE, value: results_json.title || results_json.name},
+                ]);
+                this.setState({is_handling: false});
+                navigate(PERSON_SCREEN)
             }
-            else ToastAndroid.show('لطفا اینترنت و فیلترشکن خود را روشن کنید..', ToastAndroid.SHORT);
-        });
+        } catch (error) {
+            console.error(error);
+        }
     };
 
     render() {
-        const { updateProp, store:{}, item, index, results_length } = this.props;
-        const is_movie = item.media_type !== "person";
+        const {
+            item:{
+                item:{
+                    title,
+                    name,
+                    id,
+                    media_type = "movie",
+                    poster_path,
+                    profile_path,
+                    popularity,
+                    vote_count,
+                    vote_average,
+                    first_air_date,
+                    release_date,
+                    known_for,
+                    original_language
+                },
+                index
+            },
+        } = this.props;
+        const is_movie = media_type !== "person";
         return (
-            <View style={[styles.item, (index+1 === results_length) && {marginBottom: 43}]}>
+            <View style={[styles.item,(index === 0) && {marginTop: 4}]}>
                 <ImgSection
-                    onPress={()=>this.handleLink(item.id, item.media_type)}
-                    img_path={is_movie ? item.poster_path : item.profile_path}
+                    onPress={()=>this.handleLink(id, media_type)}
+                    img_path={is_movie ? poster_path : profile_path}
                 />
 
                 <View style={styles.details}>
 
                     <KeyVal
                         keyy={"نام"}
-                        val={item.name || item.title}
-                        onPress={()=>this.handleLink(item.id, item.media_type)}
+                        val={name || title}
+                        onPress={()=>this.handleLink(id, media_type)}
                     />
-                    <KeyVal  keyy={"محبوبیت"} val={item.popularity}/>
+                    <KeyVal  keyy={"محبوبیت"} val={toPersian(popularity)}/>
 
                     {is_movie
                         ?
                         <View>
-                            <KeyVal keyy={"نوع"} val={item.media_type === "tv" ? " سریال" : " سینمایی"}/>
-                            <KeyVal keyy={"تعداد رای"} val={toPersian(item.vote_count)}/>
-                            <KeyVal keyy={"امتیاز"} val={toPersian(item.vote_average)}/>
-                            <KeyVal keyy={"تاریخ انتشار"} val={toPersian(correct_date(item.first_air_date || item.release_date))}/>
-                            <KeyVal keyy={"زبان"} val={toPersian(item.original_language)}/>
+                            <KeyVal keyy={"نوع"} val={media_type}/>
+                            <KeyVal keyy={"تعداد رای"} val={toPersian(vote_count)}/>
+                            <KeyVal keyy={"امتیاز"} val={toPersian(vote_average)}/>
+                            <KeyVal keyy={"تاریخ انتشار"} val={toPersian(correct_date(first_air_date || release_date))}/>
+                            <KeyVal keyy={"زبان"} val={toPersian(original_language)}/>
                         </View>
                         :
                         <KnownFor
                             keyy={"اثر برجسته"}
-                            val={item.known_for}
-                            onPress={id=>this.handleLink(id, "movie")}
+                            val={known_for}
+                            onPress={this.handleLink}
                         />
                     }
 
@@ -127,5 +146,9 @@ const styles = StyleSheet.create({
     details:{
         width: "55%",
         padding: 4
-    }
+    },
+    loading:{
+        position: "absolute",
+        top: 110
+    },
 });

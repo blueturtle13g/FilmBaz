@@ -1,193 +1,105 @@
 import React, { Component } from 'react';
 import {
-    View,
-    Text,
     StyleSheet,
     I18nManager,
-    TouchableOpacity,
-    Image,
     NetInfo,
-    Alert,
-    PermissionsAndroid,
-    YellowBox
+    ScrollView,
+    View,
+    Text
 } from 'react-native';
 import { connect } from 'react-redux';
 import RNRestart from 'react-native-restart';
-
+import MyCarousel from '../components/item/MyCarousel';
+import LinearGradient from 'react-native-linear-gradient';
 import { updateProp } from '../actions';
 import {
-    WISH_LIST_SCREEN,
-    NETWORK_ERR,
-    SECTIONS_IMG,
-    ARTICLE_IMG,
-    FAVORITE_SCREEN,
-    ARTICLES_SCREEN,
-    SEEN_SCREEN,
-    TOP_SCREEN,
-    IS_PERMITTED,
-    UNSPLASH_BASE_REQ,
-    UNSPLASH_CLIENT_ID,
-    FESTIVAL_IMG,
-    FESTIVALS_SCREEN
+    TMDB_BASE_REQ,
+    TMDB_API_KEY,
+    ORIENTATION,
+    LANDSCAPE,
+    NETWORK_ERR
 } from "../actions/types";
 import Search from '../components/absolute/Search';
+import HomeLinks from '../components/HomeLinks';
+import Orientation from 'react-native-orientation';
+import MyOverlay from '../components/absolute/MyOverlay';
 
 class HomeScreen extends Component {
     state={
+        bests_of_current_year: [],
+        net_err: ""
     };
 
     async componentDidMount() {
-        YellowBox.ignoreWarnings([
-            "Warning: NetInfo has been extracted from react-native core and will be removed in a future release. " +
-            "It can now be installed and imported from '@react-native-community/netinfo' instead of 'react-native'. " +
-            "See https://github.com/react-native-community/react-native-netinfo",
-            'Remote debugger is in a background tab which may cause apps to perform slowly',
-        ]);
-        if(!I18nManager.isRTL) RNRestart.Restart();
+        Orientation.unlockAllOrientations();
+        Orientation.addOrientationListener(this._orientationDidChange);
+        this.getBestsOfYear();
+        const refresh_interval = setInterval(()=>{
+            if(!this.state.bests_of_current_year.length) this.getBestsOfYear();
+            else clearInterval(refresh_interval);
+        }, 7000);
+        if (!I18nManager.isRTL) RNRestart.Restart();
         this.netInfoLisntener = NetInfo.addEventListener('connectionChange', this.handleNetChange);
-        const granted = await PermissionsAndroid.request(
-            PermissionsAndroid.PERMISSIONS.WRITE_EXTERNAL_STORAGE,
-            {
-                title: 'اجازه دسترسی به مستندات',
-                message: 'فیلم باز جهت دسترسی به عکس های شما، نیازمند این اجازه می باشد.',
-            }
-        );
-        if (granted === PermissionsAndroid.RESULTS.GRANTED) {
-            this.props.updateProp({key: IS_PERMITTED, value: true})
-        } else {
-            Alert.alert(
-                'دسترسی',
-                'دسترسی به گالری لغو شد!'
-            );
-        }
-        NetInfo.isConnected.fetch().then(isConnected=> {
-            // console.log("isConnected: ", isConnected);
-            if(isConnected) this.getImages();
-        });
     }
+    _orientationDidChange =orientation=>this.props.updateProp({key: ORIENTATION, value: orientation});
 
     componentWillUnmount() {
         this.netInfoLisntener.remove();
+        Orientation.removeOrientationListener(this._orientationDidChange);
     }
 
-    getImages = async ()=>{
-        try {
-            let sections_img = await fetch(
-                `${UNSPLASH_BASE_REQ}movie&page=${Math.floor(Math.random() * 80) + 1 }&per_page=4${UNSPLASH_CLIENT_ID}`
-            );
-            let sections_img_json = await sections_img.json();
-            if(sections_img_json.results.length > 3){
-                // console.log("sections_img_json: ", sections_img_json);
-                this.props.updateProp({
-                    key: SECTIONS_IMG,
-                    value: [
-                        {uri: sections_img_json.results[0].urls.small},
-                        {uri: sections_img_json.results[1].urls.small},
-                        {uri: sections_img_json.results[2].urls.small},
-                        {uri: sections_img_json.results[3].urls.small},
-                    ]
-                });
-            }
-        } catch (error) {
-            console.error(error);
-        }
-        try {
-            let article_img = await fetch(
-                `${UNSPLASH_BASE_REQ}read&page=${Math.floor(Math.random() * 850) + 1 }&per_page=1${UNSPLASH_CLIENT_ID}`
-            );
-            let article_img_json = await article_img.json();
-            if(!!article_img_json.results.length) {
-                this.props.updateProp({
-                    key: ARTICLE_IMG,
-                    value: {uri: article_img_json.results[0].urls.small}
-                });
-            }
-        } catch (error) {
-            console.error(error);
-        }
-        try {
-            let festival_img = await fetch(
-                `${UNSPLASH_BASE_REQ}festival&page=${Math.floor(Math.random() * 5000) + 1 }&per_page=1${UNSPLASH_CLIENT_ID}`
-            );
-            let festival_img_json = await festival_img.json();
-            if(!!festival_img_json.results.length) {
-                this.props.updateProp({
-                    key: FESTIVAL_IMG,
-                    value: {uri: festival_img_json.results[0].urls.small}
-                });
-            }
-        } catch (error) {
-            console.error(error);
-        }
-    };
+    handleNetChange = async (info) =>this.props.updateProp({ key: NETWORK_ERR, value: (info.type === 'none')});
 
-    handleNetChange = async (info) => {
-        if(info.type === 'none') this.props.updateProp({key: NETWORK_ERR, value: "لطفا اینترنت خود را متصل کنید."});
-        else  this.props.updateProp({key: NETWORK_ERR, value:  ""});
-    };
-
-    renderImage = i=>{
-        const { sections_img, festival_img, article_img } = this.props.store;
-        if(i < 4){
-             return <Image
-                 style={styles.link_img}
-                 source={sections_img[i]}
-             />
-        }
-        if(i === 4){
-            return <Image
-                style={styles.link_img}
-                source={festival_img}
-            />
-        }
-        return <Image
-            style={styles.link_img}
-            source={article_img}
-        />
+    getBestsOfYear = ()=>{
+        NetInfo.isConnected.fetch().then(async isConnected=> {
+            if(isConnected){
+                const shuttle_page = `&page=${Math.floor(Math.random()*120)+1}`;
+                const conditions = `&sort_by=vote_average.desc&vote_count.gte=100&vote_average.gte=7`;
+                try {
+                    let bests_of_year = await fetch(
+                        `${TMDB_BASE_REQ}/discover/movie${TMDB_API_KEY}${conditions}${shuttle_page}`);
+                    let bests_of_year_json = await bests_of_year.json();
+                    if(Math.floor(Math.random()*2)+1 === 1){
+                        this.setState({bests_of_current_year: bests_of_year_json.results.slice(0, 10)})
+                    }else{
+                        this.setState({bests_of_current_year: bests_of_year_json.results.slice(10, 20)})
+                    }
+                } catch (error) {
+                    console.error(error);
+                }
+            }
+            else this.props.updateProp({ key: NETWORK_ERR, value: true});
+        });
     };
 
     render() {
-        const { updateProp, store:{ sections }, navigation} = this.props;
+        const {store:{ orientation}, navigation:{navigate}} = this.props;
+        const {bests_of_current_year} = this.state;
         return (
-            <View style={styles.container}>
-                <View style={styles.links}>
-
-                    {sections.map((section, i)=>{
-                        return(
-                            <TouchableOpacity
-                                key={section}
-                                activeOpacity={.7}
-                                style={styles.link}
-                                onPress={()=>{
-                                    switch (i){
-                                        case 0:
-                                            navigation.navigate(FAVORITE_SCREEN);
-                                            break;
-                                        case 1:
-                                            navigation.navigate(WISH_LIST_SCREEN);
-                                            break;
-                                        case 2:
-                                            navigation.navigate(SEEN_SCREEN);
-                                            break;
-                                        case 3:
-                                            navigation.navigate(TOP_SCREEN);
-                                            break;
-                                        case 4:
-                                            navigation.navigate(FESTIVALS_SCREEN);
-                                            break;
-                                        case 5:
-                                            navigation.navigate(ARTICLES_SCREEN);
-                                    }
-                                }}
-                            >
-                                {this.renderImage(i)}
-                                <Text style={styles.link_txt}>{section}</Text>
-                            </TouchableOpacity>
-                        )
-                    })}
-                </View>
-                <Search navigation={navigation}/>
-            </View>
+            <LinearGradient
+                colors={["#43cea2","#185a9d"]}
+                style={styles.container}
+            >
+                {orientation === LANDSCAPE
+                    ?
+                    <ScrollView>
+                        <HomeLinks navTo={target_screen=>navigate(target_screen)}/>
+                        <MyCarousel data={bests_of_current_year} navigate={navigate}/>
+                    </ScrollView>
+                    :
+                    <View>
+                        <HomeLinks navTo={target_screen=>navigate(target_screen)}/>
+                        <MyCarousel data={bests_of_current_year} navigate={navigate}/>
+                    </View>
+                }
+                {!bests_of_current_year.length &&<MyOverlay/>}
+                {!bests_of_current_year.length &&<Text
+                    style={styles.vpn_err}
+                >
+                    لطفا از متصل بودن فیلترشکن اطمینان حاصل کنید.
+                </Text>}
+                <Search navigate={navigate}/>
+            </LinearGradient>
         );
     }
 }
@@ -204,35 +116,12 @@ export default connect(
 
 const styles = StyleSheet.create({
     container:{
-        flex: 1
+        flex: 1,
+        paddingTop: 2
     },
-    links:{
-        width: "100%",
-        flexDirection: "row",
-        flexWrap: "wrap",
-        alignItems: "center",
-        marginTop: .5
-    },
-    link:{
-        width: "50%",
-        height: 60,
-        backgroundColor: "#005b96",
-        borderWidth: .5,
-        borderColor: "#fff",
-        flexDirection: "row",
-        alignItems: "center",
-        overflow: "hidden",
-        borderRadius: 4
-    },
-    link_img:{
-        width: 70,
-        height: 59,
-        resizeMode: "cover",
-    },
-    link_txt:{
+    vpn_err:{
+        textAlign: "center",
         fontSize: 19,
-        paddingRight: 5,
-        fontWeight: "400",
-        color: "#f9f4f4"
-    },
+        marginTop: -135
+    }
 });

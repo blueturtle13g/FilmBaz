@@ -1,16 +1,39 @@
 import React, { Component } from 'react';
-import { View, Text, StyleSheet } from 'react-native';
+import {
+    StyleSheet,
+    FlatList
+} from 'react-native';
 import { connect } from 'react-redux';
-import { updateProp } from '../actions';
+import ResultItem from '../components/item/ResultItem';
+import LinearGradient from 'react-native-linear-gradient';
+import * as Animatable from 'react-native-animatable';
 
 class SeenScreen extends Component {
 
     render() {
-        const { updateProp, store:{} } = this.props;
+        const { store:{ seen_movies }, navigation:{navigate} } = this.props;
         return (
-            <View style={styles.container}>
-                <Text>saw screen</Text>
-            </View>
+            <LinearGradient
+                colors={["#d3cce3","#e9e4f0"]}
+                style={styles.container}
+            >
+                {!seen_movies.length &&(
+                    <Animatable.Text
+                        animation="flipInX"
+                        iterationCount={1}
+                        style={styles.no_item}>
+                        هیچ موردی ثبت نشده است.
+                    </Animatable.Text>
+                )}
+                <FlatList
+                    data={seen_movies}
+                    keyExtractor={item=>item.id.toString()}
+                    renderItem={item=><ResultItem
+                        item={item}
+                        navigate={navigate}
+                    />}
+                />
+            </LinearGradient>
         );
     }
 }
@@ -22,11 +45,17 @@ function mapStateToProps(store) {
 }
 
 export default connect(
-    mapStateToProps, {updateProp}
+    mapStateToProps
 )(SeenScreen);
 
 const styles = StyleSheet.create({
     container:{
-
-    }
+        flex: 1
+    },
+    no_item:{
+    color: "#2b2b2b",
+        fontSize: 21,
+        textAlign: "center",
+        marginTop: 10
+}
 });
